@@ -60,8 +60,8 @@ export default {
 		n(name) {
 			return "tagi-drag-sort-" + name;
 		},
-		handleItemDown({ downEvent, item, index }) {
-			const target = downEvent.currentTarget;
+		handleItemDown({ downEvent, item, index, touch, currentTarget }) {
+			const target = downEvent.currentTarget || currentTarget;
 			const dragTarget = target.parentElement;
 
 			dragTarget.style.zIndex = 9999;
@@ -69,7 +69,7 @@ export default {
 			document.body.style.cursor = "grabbing";
 
 			// 点击事件开始的Y
-			const startY = downEvent.clientY;
+			const startY = downEvent.clientY || downEvent.targetTouches[0].clientY;
 			// 单个高度
 			const height = getNodeHeight(dragTarget);
 			// 拖拽元素的信息
@@ -91,7 +91,9 @@ export default {
 				this.dragging.offsetTop = dragTarget.offsetTop + lateY;
 			};
 			const move = (moveEvent) => {
-				top = moveEvent.clientY - startY;
+				moveEvent.stopPropagation();
+				moveEvent.preventDefault();
+				top = (moveEvent.clientY || moveEvent.targetTouches[0].clientY) - startY;
 				setY();
 			};
 			const scroll = (scrollEvent) => {
@@ -108,18 +110,18 @@ export default {
 				document.body.style.cursor = null;
 				this.positionChange(dragTarget);
 				this.dragging = null;
-				document.removeEventListener("mousemove", move);
-				document.removeEventListener("mouseup", up);
+				document.removeEventListener(touch ? "touchmove" : "mousemove", move);
+				document.removeEventListener(touch ? "touchend" : "mouseup", up);
 				this.$el.removeEventListener("scroll", scroll);
 			};
-			document.addEventListener("mousemove", move);
-			document.addEventListener("mouseup", up);
+			document.addEventListener(touch ? "touchmove" : "mousemove", move, { passive: false });
+			document.addEventListener(touch ? "touchend" : "mouseup", up);
 			this.$el.addEventListener("scroll", scroll);
 		},
 		positionChange(dragTarget) {
 			const dragIndex = this.dragging.index;
 
-			/* 
+			/*
 			dragIndex：拖拽目标的index，
 			dragTarget：拖拽目标的原信息，
 			dragNode：拖拽目标的dom节点，

@@ -4,6 +4,7 @@
 			:class="n('wrapper', itemWrapperClassName)"
 			:style="itemWrapperStyle"
 			@mousedown="$emit('itemDown', { downEvent: $event, item, index })"
+			@touchstart="handleTouchStart"
 		>
 			<slot />
 		</div>
@@ -22,6 +23,11 @@ export default {
 		gap: Number,
 		itemWrapperStyle: null,
 		itemWrapperClassName: String,
+	},
+	data() {
+		return {
+			timer: null,
+		};
 	},
 	computed: {
 		itemStyle() {
@@ -61,6 +67,22 @@ export default {
 	methods: {
 		n(name, otherClass = "") {
 			return "tagi-drag-sort-item-" + name + " " + otherClass;
+		},
+		handleTouchStart(e) {
+			const currentTarget = e.currentTarget;
+			const clear = (e, clearTimer = true) => {
+				clearTimer && clearTimeout(this.timer);
+				document.removeEventListener("touchmove", clear);
+				document.removeEventListener("touchend", clear);
+			};
+			this.timer = setTimeout(() => {
+				e.stopPropagation();
+				e.preventDefault();
+				clear(null, true);
+				this.$emit("itemDown", { downEvent: e, item: this.item, index: this.index, touch: true, currentTarget });
+			}, 300);
+			document.addEventListener("touchmove", clear);
+			document.addEventListener("touchend", clear);
 		},
 	},
 };
