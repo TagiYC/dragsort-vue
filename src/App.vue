@@ -7,8 +7,12 @@
 				:width="'50%'"
 				:height="'100%'"
 				:gap="8"
-				:itemWrapperStyle="{}"
-				:itemWrapperClassName="'test'"
+				:draggingCursor="'-webkit-grabbing'"
+				:itemWrapperStyle="{
+					borderRadius: '5px',
+					border: '2px solid transparent',
+				}"
+				:draggingItemClassName="'active'"
 				@dragEnd="handleDragEnd"
 			>
 				<template #item="{ item }">
@@ -22,8 +26,10 @@
 				:width="'50%'"
 				:height="'100%'"
 				:gap="8"
-				:itemWrapperStyle="{}"
-				:itemWrapperClassName="'test'"
+				:autoScrollOffset="100"
+				:draggingCursor="'-webkit-grabbing'"
+				:itemWrapperClassName="'item-wrapper'"
+				:draggingItemStyle="{ borderColor: 'aqua' }"
 				@dragEnd="handleDragEnd"
 			>
 				<template #item="{ item }">
@@ -87,6 +93,10 @@ export default {
 </script>
 
 <style lang="scss">
+* {
+	padding: 0;
+	margin: 0;
+}
 #app {
 	display: flex;
 	justify-content: center;
@@ -98,6 +108,13 @@ export default {
 		height: 100%;
 		display: flex;
 		justify-content: center;
+	}
+	.item-wrapper {
+		border-radius: 5px;
+		border: 2px solid transparent;
+	}
+	.active {
+		border-color: aqua !important;
 	}
 }
 </style>

@@ -1,8 +1,12 @@
 <template>
 	<div class="tagi-drag-sort-item" :style="itemStyle">
 		<div
-			:class="n('wrapper', itemWrapperClassName)"
-			:style="itemWrapperStyle"
+			:class="[
+				'tagi-drag-sort-item-wrapper',
+				itemWrapperClassName,
+				dragging && dragging.item == item ? draggingItemClassName : '',
+			]"
+			:style="{ ...itemWrapperStyle, ...(dragging && dragging.item == item ? draggingItemStyle : {}) }"
 			@mousedown="$emit('itemDown', { downEvent: $event, item, index })"
 			@touchstart="handleTouchStart"
 		>
@@ -21,8 +25,11 @@ export default {
 		dragging: Object,
 
 		gap: Number,
-		itemWrapperStyle: null,
+		itemWrapperStyle: Object,
 		itemWrapperClassName: String,
+		draggingItemStyle: Object,
+		draggingItemClassName: String,
+		duration: Number,
 	},
 	data() {
 		return {
@@ -57,8 +64,8 @@ export default {
 			this.borderColor = isChoose ? "#59c7f9" : "";
 			return {
 				translate,
-				transition: isChoose || !this.dragging ? "" : "translate 0.3s",
-				cursor: isChoose ? "grabbing" : "",
+				transition: isChoose || !this.dragging ? "" : `translate ${this.duration}s`,
+				// cursor: isChoose ? "grabbing" : "",
 				padding: this.gap / 2 + "px 0",
 			};
 		},
@@ -88,22 +95,13 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style>
 .tagi-drag-sort-item {
 	position: relative;
-	// padding: 5px 0;
-	&-wrapper {
-		cursor: pointer;
-		position: relative;
-		padding: 5px;
-		background-color: #cfcfcf;
-		border-radius: 5px;
-		border: 2px solid transparent;
-		color: #000;
-		outline: 2px solid transparent;
-		&:hover {
-			border: 2px solid #9a9a9a;
-		}
-	}
+}
+.tagi-drag-sort-item-wrapper {
+	position: relative;
+	padding: 5px;
+	background-color: #d9d9d9;
 }
 </style>

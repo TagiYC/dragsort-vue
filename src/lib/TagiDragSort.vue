@@ -1,15 +1,18 @@
 <template>
-	<div class="tagi-drag-sort" :style="wrapperStyle">
-		<div :class="n('list')">
+	<div ref="scrollWrapper" class="tagi-drag-sort" :style="wrapperStyle">
+		<div class="tagi-drag-sort-list">
 			<TagiDragSortItem
 				v-for="(item, index) in dataSource"
 				:key="item[keyName]"
 				:item="item"
 				:index="index"
 				:dragging="dragging"
+				:duration="duration"
 				:gap="gap"
 				:itemWrapperStyle="itemWrapperStyle"
 				:itemWrapperClassName="itemWrapperClassName"
+				:draggingItemStyle="draggingItemStyle"
+				:draggingItemClassName="draggingItemClassName"
 				@itemDown="handleItemDown"
 			>
 				<slot name="item" :item="item" />
@@ -26,11 +29,16 @@ export default {
 	data() {
 		return {
 			dragging: null,
+			scrollTimer: null,
+			scrollValue: 0,
 		};
 	},
 	components: { TagiDragSortItem },
 	props: {
-		dataSource: Array,
+		dataSource: {
+			type: Array,
+			require: true,
+		},
 		width: {
 			type: String | Number,
 			default: "100%",
@@ -44,8 +52,39 @@ export default {
 			type: String,
 			default: "key",
 		},
-		itemWrapperStyle: String | Object,
-		itemWrapperClassName: String,
+		itemWrapperStyle: {
+			type: Object,
+			default: () => ({}),
+		},
+		itemWrapperClassName: {
+			type: String,
+			default: "",
+		},
+		draggingItemStyle: {
+			type: Object,
+			default: () => ({}),
+		},
+		draggingItemClassName: {
+			type: String,
+			default: "",
+		},
+		draggingCursor: {
+			type: String,
+			default: "",
+		},
+		duration: {
+			type: Number,
+			default: 0.3,
+		},
+		autoScroll: { type: Boolean, default: true },
+		autoScrollOffset: {
+			type: Number,
+			default: 50,
+		},
+		autoScrollMaxValue: {
+			type: Number,
+			default: 20,
+		},
 	},
 	computed: {
 		wrapperStyle() {
@@ -57,16 +96,19 @@ export default {
 		},
 	},
 	methods: {
-		n(name) {
-			return "tagi-drag-sort-" + name;
-		},
 		handleItemDown({ downEvent, item, index, touch, currentTarget }) {
+			if (downEvent.button && downEvent !== 0) return;
 			const target = downEvent.currentTarget || currentTarget;
 			const dragTarget = target.parentElement;
+			// TEST
+			const scrollWrapper = this.$refs.scrollWrapper;
+			const scrollHeight = scrollWrapper.scrollHeight;
 
 			dragTarget.style.zIndex = 9999;
-			target.style.cursor = "grabbing";
-			document.body.style.cursor = "grabbing";
+			const originTargetCursor = target.style.cursor;
+			const originBodyCursor = document.body.style.cursor;
+			target.style.cursor = this.draggingCursor;
+			document.body.style.cursor = this.draggingCursor;
 
 			// 点击事件开始的Y
 			const startY = downEvent.clientY || downEvent.targetTouches[0].clientY;
@@ -93,8 +135,37 @@ export default {
 			const move = (moveEvent) => {
 				moveEvent.stopPropagation();
 				moveEvent.preventDefault();
-				top = (moveEvent.clientY || moveEvent.targetTouches[0].clientY) - startY;
-				setY();
+				if (moveEvent.clientY || moveEvent?.targetTouches) {
+					const clientY = moveEvent.clientY || moveEvent.targetTouches[0].clientY;
+					top = clientY - startY;
+					const scrollWrapperRect = scrollWrapper.getBoundingClientRect();
+					const mouseTop = clientY - scrollWrapperRect.top;
+
+					// 是否触发自动滚动
+					if (this.autoScroll) {
+						// 是否满足自动滚动条件
+						const isScrollTop = mouseTop < this.autoScrollOffset;
+						const isScrollBottom = scrollWrapperRect.height - mouseTop < this.autoScrollOffset;
+						if (isScrollTop || isScrollBottom) {
+							const borderLength = isScrollTop ? mouseTop : scrollWrapperRect.height - mouseTop;
+							// 滚动速度
+							this.scrollValue =
+								Math.min(this.autoScrollMaxValue, Math.pow((this.autoScrollOffset - borderLength) / 5, 1.5)) *
+								(isScrollTop ? -1 : 1);
+							clearInterval(this.scrollTimer);
+							// 设置定时器执行滚动
+							this.scrollTimer = setInterval(() => {
+								const newScrollTop = scrollWrapper.scrollTop + this.scrollValue;
+
+								newScrollTop < scrollHeight - scrollWrapperRect.height && scrollWrapper.scrollTo({ top: newScrollTop });
+							}, 20);
+						} else {
+							this.scrollValue = 0;
+							clearInterval(this.scrollTimer);
+						}
+					}
+					setY();
+				}
 			};
 			const scroll = (scrollEvent) => {
 				const newTop = scrollEvent.target.scrollTop;
@@ -103,11 +174,13 @@ export default {
 			};
 
 			const up = (upEvent) => {
+				this.scrollValue = 0;
+				clearInterval(this.scrollTimer);
 				dragTarget.style.translate = "";
 				dragTarget.style.zIndex = 1;
 				dragTarget.style.pointerEvents = "auto";
-				target.style.cursor = "";
-				document.body.style.cursor = null;
+				target.style.cursor = originTargetCursor;
+				document.body.style.cursor = originBodyCursor;
 				this.positionChange(dragTarget);
 				this.dragging = null;
 				document.removeEventListener(touch ? "touchmove" : "mousemove", move);
@@ -161,14 +234,13 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style>
 .tagi-drag-sort {
 	overflow-y: scroll;
 	user-select: none;
-
-	&-list {
-		position: relative;
-		min-height: 100%;
-	}
+}
+.tagi-drag-sort-list {
+	position: relative;
+	min-height: 100%;
 }
 </style>
