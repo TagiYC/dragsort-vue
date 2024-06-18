@@ -1,4 +1,4 @@
-# tagi-dragsort-vue
+# dragsort-vue-demo
 
 ## Project setup
 ```
