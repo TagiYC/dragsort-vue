@@ -1,2 +1,6 @@
-const { defineConfig } = require("@vue/cli-service");
-module.exports = defineConfig({ publicPath: "./", transpileDependencies: true });
+const { defineConfig } = require("vite");
+
+module.exports = defineConfig({
+	publicPath: "./",
+	transpileDependencies: true,
+});

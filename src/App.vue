@@ -4,7 +4,9 @@
 		<div class="box-v">
 			<div class="tip">
 				<p>Move here to scroll automatically</p>
-				<div class="content">List</div>
+				<div class="content">
+					<a href="https://github.com/TagiYC/dragsort-vue">GitHub</a>
+				</div>
 				<p>Move here to scroll automatically</p>
 			</div>
 			<TagiDragSort
